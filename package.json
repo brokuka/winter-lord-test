@@ -1,0 +1,40 @@
+{
+  "name": "nuxt-app",
+  "type": "module",
+  "private": true,
+  "packageManager": "pnpm@9.15.3",
+  "scripts": {
+    "build": "nuxt build",
+    "dev": "nuxt dev",
+    "dev:host": "nuxt dev --host",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview",
+    "postinstall": "nuxt prepare"
+  },
+  "dependencies": {
+    "@nuxtjs/tailwindcss": "npm:@nuxtjs/tailwindcss@nightly",
+    "@vueuse/core": "^12.4.0",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "lucide-vue-next": "^0.471.0",
+    "radix-vue": "^1.9.12",
+    "slug": "^10.0.0",
+    "tailwind-merge": "^2.6.0",
+    "tailwindcss-animate": "^1.0.7"
+  },
+  "devDependencies": {
+    "@antfu/eslint-config": "^3.13.0",
+    "@iconify-json/game-icons": "^1.2.1",
+    "@nuxt/content": "3.0.0",
+    "@nuxt/eslint": "^0.7.5",
+    "@nuxt/fonts": "0.10.3",
+    "@nuxt/icon": "1.10.3",
+    "@types/slug": "^5.0.9",
+    "eslint": "^9.18.0",
+    "eslint-plugin-format": "^1.0.1",
+    "nuxt": "^3.15.1",
+    "template-copyright": "^1.0.1",
+    "typescript": "^5.7.3",
+    "vue-tsc": "^2.2.0"
+  }
+}
