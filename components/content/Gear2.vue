@@ -1,12 +1,7 @@
 <script setup lang="ts">
 import type { Equipment } from '~/utils/types'
 
-interface TestProps {
-  title: string
-  obj: Record<string, number>
-}
-
-const props = defineProps<TestProps>()
+const props = defineProps<Partial<Equipment>>()
 
 watchEffect(() => console.log(props))
 </script>

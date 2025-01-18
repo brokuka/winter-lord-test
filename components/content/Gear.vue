@@ -9,15 +9,15 @@ import type { Equipment } from '~/utils/types'
 
 const props = defineProps<Equipment>()
 
-const { stars: activeStarCount, tableData: data } = useEquipment(props)
+const { activeStar, tableData: data } = useEquipment(props)
 
 function selectStar(star: number) {
-  if (activeStarCount.value === star) {
-    activeStarCount.value = 0
+  if (activeStar.value === star) {
+    activeStar.value = 0
     return
   }
 
-  activeStarCount.value = star
+  activeStar.value = star
 }
 </script>
 
@@ -33,7 +33,7 @@ function selectStar(star: number) {
         <UiButton v-for="star in 5" :key="star" size="icon" variant="ghost" @click="selectStar(star)">
           <Icon
             name="material-symbols:star-rounded" class="text-4xl text-muted transition-colors shrink-0"
-            :class="{ 'text-yellow-300': activeStarCount >= star, 'hover:text-muted-foreground': activeStarCount < star }"
+            :class="{ 'text-yellow-300': activeStar >= star, 'hover:text-muted-foreground': activeStar < star }"
           />
         </UiButton>
       </div>
