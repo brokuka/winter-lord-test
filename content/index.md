@@ -1,5 +1,5 @@
 ---
-title: 'Main page title'
+title: Main page title
 ---
 
 main page
