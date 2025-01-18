@@ -1,4 +1,4 @@
-::gear
+::gear2
 ---
 id: imperial-boots
 name: Imperial Boots

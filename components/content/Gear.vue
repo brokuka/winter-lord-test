@@ -1,9 +1,3 @@
-<!-- <script setup lang="ts">
-defineProps<{
-  title: string
-}>()
-</script> -->
-
 <script setup lang="ts">
 import type { Equipment } from '~/utils/types'
 
