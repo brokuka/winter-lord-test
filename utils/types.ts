@@ -1,17 +1,21 @@
 // types.ts
-export type NonGoldResourceType = 'upgradeOre' // Пример типа ресурса, можно добавить другие типы
+export type ResourseMaterial = 'upgradeOre' | 'coin' // Пример типа ресурса, можно добавить другие типы
+export type StatType = 'heroDefense' | 'heroHP' | 'boostHeroHP' | 'boostHeroDefense' | 'magicDamageResistance' | 'heroAttack' | 'criticalHitRate' | 'boostHeroAttack'
+
+export type EquipmentRarity = 'imperial' | 'royal'
+export type EquimpentSlot = 'boots' | 'sword' | 'gauntlet' | 'armor'
 
 export interface Resource {
-  type: NonGoldResourceType
+  material: ResourseMaterial
   amount: number
 }
 
-export type LevelRequirements = Record<number, {
+export type TableLevelRequirements = Record<number, {
   resourses: Resource[]
   goldCost: number
 }>
 
-export type StatExtra = Record<number, string | number>
+export type StatExtra = Record<string, string | number>
 export interface StatProgression {
   values: number[]
   incrementPerLevel?: number
@@ -19,22 +23,26 @@ export interface StatProgression {
   promote: number[]
 }
 
-export type StatType = 'heroDefense' | 'heroHP' | 'boostHeroHP' | 'boostHeroDefense' | 'magicDamageResistance' | 'heroAttack' | 'criticalHitRate' | 'boostHeroAttack'
-
 export type StatsProgression = Partial<Record<StatType, StatProgression>>
 
 export type EquipmentStats = Partial<Record<StatType, number>>
 
-export type StarsStats = Record<string, Record<number, EquipmentStats>>
+export type StarsStats = Partial<Record<EquipmentRarity, Partial<Record<EquimpentSlot, Record<number, EquipmentStats>>>>>
 
 export interface Equipment {
   id: string
   name: string
-  slot: string
-  rarity: string
+  slot: EquimpentSlot
+  rarity: EquipmentRarity
   statsProgression: StatsProgression
 }
 
+export type LevelRequirements = {
+  min: number
+  max: number
+} & Partial<Record<ResourseMaterial, number>>
+
+export type LevelUpgrade = Partial<Record<EquipmentRarity, LevelRequirements[]>>
 export type LevelStats = Record<string, number | string>
 
 export interface TableData {

@@ -1,11 +1,5 @@
-export default function useEquipment(initialEquipment: Equipment) {
-  const equipment = ref(initialEquipment)
-  const activeStar = ref(0)
-  const isPromoted = ref(false)
-  const maxStars = 5
-  const maxLevel = 40
-
-  const starsStats: StarsStats = {
+const starsStats: StarsStats = {
+  imperial: {
     boots: {
       0: {
         heroDefense: 40,
@@ -15,140 +9,137 @@ export default function useEquipment(initialEquipment: Equipment) {
       },
       1: {
         heroDefense: 50,
-        heroHP: 11500,
+        heroHP: 11550,
+      },
+      2: {
+        heroDefense: 60,
+        heroHP: 12750,
+      },
+      3: {
+        heroDefense: 80,
+        heroHP: 14000,
+      },
+      4: {
+        heroDefense: 100,
+        heroHP: 16500,
+      },
+      5: {
+        heroDefense: 120,
+        heroHP: 18800,
       },
     },
-    sword: {
-      0: {
-        heroAttack: 10500,
-        heroDefense: 40,
-        criticalHitRate: 5.00,
-        boostHeroAttack: 2.50,
-      },
-    },
-  }
+  },
+}
 
-  const levelRequirements: LevelRequirements = {
-    0: {
-      resourses: [
-        { type: 'upgradeOre', amount: 1500 },
-      ],
-      goldCost: 225000,
-    },
-    5: {
-      resourses: [
-        { type: 'upgradeOre', amount: 2200 },
-      ],
-      goldCost: 337500,
-    },
-  }
+const levelUpgrade: LevelUpgrade = {
+  imperial: [
+    { min: 0, max: 4, coin: 225000, upgradeOre: 1500 },
+    { min: 4, max: 8, coin: 337500, upgradeOre: 2200 },
+    { min: 8, max: 12, coin: 450000, upgradeOre: 3000 },
+    { min: 12, max: 16, coin: 562500, upgradeOre: 3700 },
+    { min: 16, max: 20, coin: 675000, upgradeOre: 4500 },
+    { min: 20, max: 23, coin: 787500, upgradeOre: 5200 },
+    { min: 24, max: 27, coin: 900000, upgradeOre: 6000 },
+    { min: 27, max: 30, coin: 1000000, upgradeOre: 6700 },
+    { min: 30, max: 36, coin: 1100000, upgradeOre: 7500 },
+    { min: 36, max: 40, coin: 1200000, upgradeOre: 8200 },
+  ],
+}
 
-  const formatName = (stat: string): string => {
-    return stat.replace(/([a-z])([A-Z])/g, '$1 $2').split(' ').map(part =>
-      part.length > 1 && part === part.toUpperCase()
-        ? part
-        : part.charAt(0).toUpperCase() + part.slice(1).toLowerCase(),
-    ).join(' ')
-  }
+export default function useEquipment(initialEquipment: Equipment) {
+  const equipment = ref<Equipment>(initialEquipment)
+  const activeStar = ref<number>(0)
+  const isPromoted = ref<boolean>(false)
+  const maxStars = 5
+  const maxLevel = 40
 
-  const generateValue = (statProgression: StatProgression, currentLevel: number): number => {
-    if (isPromoted.value) {
-      // Для promoted состояния используем значения из promote массива
-      // currentLevel здесь представляет количество звёзд (1-5)
-      return statProgression.promote[currentLevel]
+  // Форматирование имени стата
+  const formatName = (stat: string, reverse: boolean = false): string => {
+    if (reverse) {
+      return stat
+        .split(' ')
+        .map((word, index) =>
+          index === 0 ? word.toLowerCase() : word.charAt(0).toUpperCase() + word.slice(1).toLowerCase(),
+        )
+        .join('')
     }
 
-    // Для обычного состояния используем values и учитываем incrementPerLevel если есть
-    let value = statProgression.values[activeStar.value] ?? statProgression.values[0]
-
-    if (statProgression.incrementPerLevel && currentLevel > 0) {
-      value += statProgression.incrementPerLevel * currentLevel
-    }
-
-    return Math.round(value * 100) / 100
+    return stat
+      .replace(/([a-z])([A-Z])/g, '$1 $2')
+      .split(' ')
+      .map(part => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+      .join(' ')
   }
 
-  const generateStatsByLevel = (
-    starsStats: StarsStats,
-    statsProgression: StatsProgression,
-    slot: string,
-  ): LevelStats[] => {
-    const levelsStats: LevelStats[] = []
-    const iterations = isPromoted.value ? maxStars : maxLevel
+  // Получение базовых статов с учётом звёзд
+  const getBaseStats = (): Record<StatType, number> => {
+    const stats: Record<StatType, number> = {} as Record<StatType, number>
 
-    for (let i = 0; i <= iterations; i++) {
-      const stats: LevelStats = {}
-      const currentStarStats = starsStats[slot][isPromoted.value ? 0 : activeStar.value] || {}
-      let mergedStarStats: EquipmentStats = { ...currentStarStats }
-
-      if (!isPromoted.value) {
-        for (let starLevel = activeStar.value - 1; starLevel >= 0; starLevel--) {
-          if (starsStats[slot][starLevel]) {
-            mergedStarStats = { ...mergedStarStats, ...starsStats[slot][starLevel] }
-          }
-        }
-      }
-
-      for (const stat of Object.keys(statsProgression) as StatType[]) {
-        const progression = statsProgression[stat]
-        if (progression) {
-          stats[formatName(stat)] = generateValue(progression, i)
-        }
-      }
-
-      levelsStats.push(stats)
+    for (let i = 0; i <= activeStar.value; i++) {
+      const starStats = starsStats[equipment.value.rarity]?.[equipment.value.slot]?.[i] || {}
+      Object.entries(starStats).forEach(([stat, value]) => {
+        const statType = stat as StatType
+        stats[statType] = value
+      })
     }
-    return levelsStats
+
+    return stats
   }
 
-  const getLevelRequirements = (levelRequirements: LevelRequirements, level: number): { resourses: Resource[], goldCost: number } => {
-    let previousResources: Resource[] = []
-    let previousGoldCost = 0
-
-    for (let i = level; i >= 0; i--) {
-      if (levelRequirements[i]) {
-        previousResources = levelRequirements[i].resourses
-        previousGoldCost = levelRequirements[i].goldCost
+  // Расчет значения стата на конкретном уровне
+  const calculateStatValue = (
+    baseValue: number,
+    statType: StatType,
+    currentLevel: number,
+  ): number | string => {
+    let increment = 0
+    switch (statType) {
+      case 'heroDefense':
+        increment = 5.94 * currentLevel
         break
-      }
+      case 'heroHP':
+        increment = 940.6 * currentLevel
+        break
+      case 'boostHeroHP':
+      case 'boostHeroDefense':
+        increment = 0.1249 * currentLevel
+        break
     }
-
-    return { resourses: previousResources, goldCost: previousGoldCost }
+    if (statType === 'boostHeroHP' || statType === 'boostHeroDefense') {
+      return `+${Number(Math.round((baseValue + increment) * 100) / 100).toFixed(2)}%`
+    }
+    return Math.round(baseValue + increment)
   }
 
-  const addLevelRequirements = (level: number): { id: string, value: number | string }[] => {
+  // Расчет требований для уровня
+  const calculateLevelRequirements = (level: number): Resource[] => {
     if (isPromoted.value)
       return []
 
-    const data: { id: string, value: number | string }[] = []
-    const requirements = getLevelRequirements(levelRequirements, level)
+    const range = levelUpgrade[equipment.value.rarity]?.find(range =>
+      level >= range.min && level <= range.max,
+    ) ?? levelUpgrade[equipment.value.rarity]?.[levelUpgrade[equipment.value.rarity]!.length - 1]
 
-    data.push({
-      id: 'Gold',
-      value: requirements.goldCost,
-    })
+    if (!range)
+      return []
 
-    requirements.resourses.forEach((resource) => {
-      data.push({
-        id: formatName(resource.type),
-        value: resource.amount,
-      })
-    })
-    return data
+    return Object.entries(range)
+      .filter(([key]) => key !== 'min' && key !== 'max')
+      .map(([key, value]) => ({
+        material: key as ResourseMaterial,
+        amount: value as number,
+      }))
   }
 
-  const getExtraAttributes = (statsProgression: StatsProgression, level: number): { id: string, value: string }[] => {
-    const extra: { id: string, value: string }[] = []
+  // Получение дополнительных атрибутов
+  const getExtraAttributes = (level: number): TableRowExtra[] => {
+    const extra: TableRowExtra[] = []
+    const starLevel = isPromoted.value ? (level + 1) * 10 : level
+    const extraKey = `lv_${starLevel}`
 
-    Object.entries(statsProgression).forEach(([stat, progression]) => {
-      let starLevel = level
-      if (isPromoted.value) {
-        // Преобразуем уровень звезды в соответствующий ключ (например, 1 звезда -> 10, 2 звезды -> 20 и т.д.)
-        starLevel = (level + 1) * 10
-      }
-
-      if (progression.extra?.[starLevel] !== undefined) {
-        const value = progression.extra[starLevel]
+    Object.entries(equipment.value.statsProgression).forEach(([stat, progression]) => {
+      if (progression?.extra?.[extraKey] !== undefined) {
+        const value = progression.extra[extraKey]
         const formattedValue = typeof value === 'string' && value.includes('.')
           ? value.endsWith('%') ? value : `${value}%`
           : value.toString()
@@ -162,26 +153,43 @@ export default function useEquipment(initialEquipment: Equipment) {
     return extra
   }
 
+  // Преобразование в данные таблицы
   const equipmentToTableData = (eq: Equipment): TableData => {
-    const levelsStats = generateStatsByLevel(starsStats, eq.statsProgression, eq.slot)
     const rows: TableRow[] = []
     const iterations = isPromoted.value ? maxStars - 1 : maxLevel
+    const baseStats = getBaseStats()
 
     for (let i = 0; i <= iterations; i++) {
-      const rowData = levelsStats[i]
-      const data: { id: string, value: number | string }[] = []
-      const extra = getExtraAttributes(eq.statsProgression, i)
+      const data: TableRowData[] = []
 
-      Object.entries(rowData).forEach(([stat, value]) => {
+      Object.entries(baseStats).forEach(([statType, baseValue]) => {
+        const value = calculateStatValue(baseValue, statType as StatType, i)
         data.push({
-          id: stat,
+          id: formatName(statType),
           value,
         })
       })
 
-      if (!isPromoted.value) {
-        data.push(...addLevelRequirements(i))
-      }
+      Object.entries(eq.statsProgression).forEach(([statType, progression]) => {
+        if (progression && !progression.extra) {
+          const baseValue = baseStats[statType as StatType] || 0
+          const value = calculateStatValue(baseValue, statType as StatType, i)
+          data.push({
+            id: formatName(statType),
+            value,
+          })
+        }
+      })
+
+      const requirements = calculateLevelRequirements(i)
+      requirements.forEach((resource) => {
+        data.push({
+          id: formatName(resource.material),
+          value: resource.amount,
+        })
+      })
+
+      const extra = getExtraAttributes(i)
 
       rows.push({
         name: isPromoted.value ? `${i + 1}` : `Level ${i}`,
@@ -190,21 +198,21 @@ export default function useEquipment(initialEquipment: Equipment) {
       })
     }
 
-    const firstColumnHeader = isPromoted.value ? 'Stars' : 'Level'
-    const headers = [firstColumnHeader].concat(
-      Array.from(new Set(rows[0]?.data.map(item => item.id) ?? [])),
-    )
+    const allColumns = new Set<string>()
+    rows.forEach((row) => {
+      row.data.forEach((item) => {
+        allColumns.add(item.id)
+      })
+    })
 
     return {
-      head: headers,
+      head: [isPromoted.value ? 'Stars' : 'Level', ...Array.from(allColumns)],
       rows,
     }
   }
 
   const canPromote = computed(() => {
-    return equipment.value.rarity === 'epic'
-      && activeStar.value === 5
-      && !isPromoted.value
+    return equipment.value.rarity === 'imperial' && activeStar.value === 5 && !isPromoted.value
   })
 
   const promote = () => {
@@ -213,7 +221,7 @@ export default function useEquipment(initialEquipment: Equipment) {
     }
   }
 
-  const tableData = computed(() => equipmentToTableData(equipment.value))
+  const tableData = computed<TableData>(() => equipmentToTableData(equipment.value))
 
   const updateEquipment = (newEquipment: Equipment) => {
     equipment.value = newEquipment

@@ -3,15 +3,30 @@ import type { Equipment } from '~/utils/types'
 
 const props = defineProps<Equipment>()
 
-const { activeStar, tableData: data } = useEquipment(props)
+const { activeStar, tableData: data, isPromoted } = useEquipment(props)
 
 function selectStar(star: number) {
   if (activeStar.value === star) {
-    activeStar.value = 0
+    if (isPromoted.value) {
+      activeStar.value = 0
+    }
+
+    isPromoted.value = !isPromoted.value
+
     return
   }
 
   activeStar.value = star
+}
+
+function showExtra(index: number, extra?: TableRowExtra[]) {
+  return isPromoted.value ? extra?.length : index % 10 === 0 && index > 0
+}
+
+function rowClasses(index: number, data: TableRow[]) {
+  return {
+    'opacity-20': isPromoted.value && (activeStar.value !== index + 1 && activeStar.value !== data.length),
+  }
 }
 </script>
 
@@ -22,12 +37,15 @@ function selectStar(star: number) {
     </div>
 
     <div class="flex flex-col items-center">
-      <span class="text-2xl">Imperial Boots</span>
+      <span class="text-2xl">{{ name }}</span>
       <div>
         <UiButton v-for="star in 5" :key="star" size="icon" variant="ghost" @click="selectStar(star)">
           <Icon
-            name="material-symbols:star-rounded" class="text-4xl text-muted transition-colors shrink-0"
-            :class="{ 'text-yellow-300': activeStar >= star, 'hover:text-muted-foreground': activeStar < star }"
+            name="material-symbols:star-rounded" class="text-4xl text-muted transition-colors shrink-0" :class="{
+              'hover:text-muted-foreground': activeStar < star,
+              'text-yellow-300': !isPromoted && activeStar >= star,
+              'text-red-600': isPromoted && activeStar >= star,
+            }"
           />
         </UiButton>
       </div>
@@ -49,7 +67,7 @@ function selectStar(star: number) {
 
       <UiTableBody class="z-[1]">
         <template v-for="(row, index) in data.rows" :key="row.name">
-          <UiTableRow class="relative">
+          <UiTableRow class="relative border-b has-[+[data-extra]]:border-none" :class="[rowClasses(index, data.rows)]">
             <UiTableCell class="font-bold whitespace-nowrap">
               {{ row.name }}
             </UiTableCell>
@@ -60,19 +78,30 @@ function selectStar(star: number) {
           </UiTableRow>
 
           <UiTableRow
-            v-if="index % 10 === 0 && index > 0"
-            class="whitespace-no-wrap hover:bg-transparent text-center font-semibold"
+            v-if="showExtra(index, row.extra)"
+            class="whitespace-no-wrap hover:bg-transparent text-center font-semibold border-none" data-extra
+            :class="[rowClasses(index, data.rows)]"
           >
             <UiTableCell class="p-0" colspan="100%">
               <div class="flex flex-col">
-                <span class="text-lg font-black bg-[#8BAFC9] text-white rounded-t-md text-stroke">Extra
-                  Attributes</span>
+                <div class="text-lg font-black bg-[#8BAFC9] text-white rounded-t-md text-stroke">
+                  Extra
+                  Attributes
+                </div>
 
                 <div
                   v-for="extra in row.extra" :key="extra.id"
-                  class="flex gap-16 items-center justify-center lg:justify-evenly bg-[#D9E4F4] p-1.5"
+                  class="flex items-center gap-16 justify-center lg:justify-between bg-[#D9E4F4] py-1.5 px-36 relative"
                 >
-                  <span class="text-yellow-300 text-stroke">Lv.{{ index }}</span>
+                  <Icon
+                    v-if="isPromoted" name="material-symbols:star-rounded"
+                    class="text-xl text-muted transition-colors shrink-0 text-red-600"
+                  />
+
+                  <span v-else class="text-yellow-300 text-stroke">
+                    Lv.{{ index }}
+                  </span>
+
                   <span class="text-[#63e884] text-stroke">{{ extra.id }}</span>
                   <span class="text-[#63e884] text-stroke">{{ extra.value }}</span>
                 </div>
