@@ -1,9 +1,5 @@
 ::gear2
 ---
-id: imperial-boots
-name: Imperial Boots
-slot: boots
-rarity: epic
 statsProgression:
   heroDefense:
     values:
@@ -18,5 +14,9 @@ statsProgression:
       - 179
     extra:
       '100': '100'
+id: imperial-boots
+name: Imperial Boots
+rarity: epic
+slot: boots
 ---
 ::
