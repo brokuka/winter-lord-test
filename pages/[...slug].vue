@@ -1,30 +1,16 @@
 <script setup lang="ts">
 const route = useRoute()
 
-const { data } = await useAsyncData(`${route.params.slug}`, () => {
-  return queryCollection('docs').path(route.path).first()
-})
+// const { data } = await useAsyncData(`${route.params.slug}`, () => {
+//   return queryCollection('docs').path(route.path).first()
+// })
 
-if (!data.value) {
-  throw createError({
-    statusCode: 404,
-    statusMessage: 'Page Not Found',
-  })
-}
+const { data } = await useAsyncData(() => queryCollection('docs').path('/').first())
 </script>
 
 <template>
-  <ClientOnly>
-    <Suspense>
-      <ContentRenderer :value="data!" />
-
-      <template #fallback>
-        Loading...
-      </template>
-    </Suspense>
-
-    <template #fallback>
-      Loading...
-    </template>
-  </ClientOnly>
+  <ContentRenderer v-if="data" :value="data" />
+  <div v-else>
+    Loading...
+  </div>
 </template>
