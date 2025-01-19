@@ -52,65 +52,65 @@ function rowClasses(index: number, data: TableRow[]) {
     </div>
   </div>
 
-  <UiScrollArea class="h-[460px] lg:h-[576px] w-dvw lg:w-fit">
-    <UiTable>
-      <UiTableHeader class="relative z-[2]">
-        <UiTableRow class="sticky top-0 left-0 z-[2]">
-          <UiTableHead
-            v-for="head in data.head" :key="head"
-            class="first:bg-accent first:text-black whitespace-nowrap font-black bg-accent text-black"
-          >
-            {{ head }}
-          </UiTableHead>
+  <!-- <UiScrollArea class="h-[460px] lg:h-[576px] w-dvw lg:w-fit"> -->
+  <UiTable>
+    <UiTableHeader class="relative z-[2]">
+      <UiTableRow class="sticky top-0 left-0 z-[2]">
+        <UiTableHead
+          v-for="head in data.head" :key="head"
+          class="first:bg-accent first:text-black whitespace-nowrap font-black bg-accent text-black"
+        >
+          {{ head }}
+        </UiTableHead>
+      </UiTableRow>
+    </UiTableHeader>
+
+    <UiTableBody class="z-[1]">
+      <template v-for="(row, index) in data.rows" :key="row.name">
+        <UiTableRow class="relative border-b has-[+[data-extra]]:border-none" :class="[rowClasses(index, data.rows)]">
+          <UiTableCell class="font-bold whitespace-nowrap">
+            {{ row.name }}
+          </UiTableCell>
+
+          <UiTableCell v-for="rowData in row.data" :key="rowData.id" class="text-muted-foreground">
+            <span class="font-medium">{{ rowData.value }}</span>
+          </UiTableCell>
         </UiTableRow>
-      </UiTableHeader>
 
-      <UiTableBody class="z-[1]">
-        <template v-for="(row, index) in data.rows" :key="row.name">
-          <UiTableRow class="relative border-b has-[+[data-extra]]:border-none" :class="[rowClasses(index, data.rows)]">
-            <UiTableCell class="font-bold whitespace-nowrap">
-              {{ row.name }}
-            </UiTableCell>
-
-            <UiTableCell v-for="rowData in row.data" :key="rowData.id" class="text-muted-foreground">
-              <span class="font-medium">{{ rowData.value }}</span>
-            </UiTableCell>
-          </UiTableRow>
-
-          <UiTableRow
-            v-if="showExtra(index, row.extra)"
-            class="whitespace-no-wrap hover:bg-transparent text-center font-semibold border-none" data-extra
-            :class="[rowClasses(index, data.rows)]"
-          >
-            <UiTableCell class="p-0" colspan="100%">
-              <div class="flex flex-col">
-                <div class="text-lg font-black bg-[#8BAFC9] text-white rounded-t-md text-stroke">
-                  Extra
-                  Attributes
-                </div>
-
-                <div
-                  v-for="extra in row.extra" :key="extra.id"
-                  class="flex items-center gap-16 justify-center lg:justify-between bg-[#D9E4F4] py-1.5 px-36 relative"
-                >
-                  <Icon
-                    v-if="isPromoted" name="material-symbols:star-rounded"
-                    class="text-xl text-muted transition-colors shrink-0 text-red-600"
-                  />
-
-                  <span v-else class="text-yellow-300 text-stroke">
-                    Lv.{{ index }}
-                  </span>
-
-                  <span class="text-[#63e884] text-stroke">{{ extra.id }}</span>
-                  <span class="text-[#63e884] text-stroke">{{ extra.value }}</span>
-                </div>
+        <UiTableRow
+          v-if="showExtra(index, row.extra)"
+          class="whitespace-no-wrap hover:bg-transparent text-center font-semibold border-none" data-extra
+          :class="[rowClasses(index, data.rows)]"
+        >
+          <UiTableCell class="p-0" colspan="100%">
+            <div class="flex flex-col">
+              <div class="text-lg font-black bg-[#8BAFC9] text-white rounded-t-md text-stroke">
+                Extra
+                Attributes
               </div>
-            </UiTableCell>
-          </UiTableRow>
-        </template>
-      </UiTableBody>
-      <UiScrollBar orientation="horizontal" />
-    </UiTable>
-  </UiScrollArea>
+
+              <div
+                v-for="extra in row.extra" :key="extra.id"
+                class="flex items-center gap-16 justify-center lg:justify-between bg-[#D9E4F4] py-1.5 px-36 relative"
+              >
+                <Icon
+                  v-if="isPromoted" name="material-symbols:star-rounded"
+                  class="text-xl text-muted transition-colors shrink-0 text-red-600"
+                />
+
+                <span v-else class="text-yellow-300 text-stroke">
+                  Lv.{{ index }}
+                </span>
+
+                <span class="text-[#63e884] text-stroke">{{ extra.id }}</span>
+                <span class="text-[#63e884] text-stroke">{{ extra.value }}</span>
+              </div>
+            </div>
+          </UiTableCell>
+        </UiTableRow>
+      </template>
+    </UiTableBody>
+    <!-- <UiScrollBar orientation="horizontal" /> -->
+  </UiTable>
+  <!-- </UiScrollArea> -->
 </template>
