@@ -1,9 +1,20 @@
-// types.ts
-export type ResourseMaterial = 'upgradeOre' | 'coin' // Пример типа ресурса, можно добавить другие типы
-export type StatType = 'heroDefense' | 'heroHP' | 'boostHeroHP' | 'boostHeroDefense' | 'magicDamageResistance' | 'heroAttack' | 'criticalHitRate' | 'boostHeroAttack'
+export type ResourseMaterial = 'upgradeOre' | 'coin'
 
 export type EquipmentRarity = 'imperial' | 'royal'
+
 export type EquimpentSlot = 'boots' | 'sword' | 'gauntlet' | 'armor'
+
+export type StatType =
+  | 'heroDefense'
+  | 'heroHP'
+  | 'boostHeroHP'
+  | 'boostHeroDefense'
+  | 'magicDamageResistance'
+  | 'heroAttack'
+  | 'criticalHitRate'
+  | 'boostHeroAttack'
+
+export type StatTypeWithIncrement = `${StatType}Increment`
 
 export interface Resource {
   material: ResourseMaterial
@@ -26,8 +37,9 @@ export interface StatProgression {
 export type StatsProgression = Partial<Record<StatType, StatProgression>>
 
 export type EquipmentStats = Partial<Record<StatType, number>>
+export type EquipmentStatsWithIncrement = EquipmentStats & Partial<Record<StatTypeWithIncrement, number>>
 
-export type StarsStats = Partial<Record<EquipmentRarity, Partial<Record<EquimpentSlot, Record<number, EquipmentStats>>>>>
+export type BaseStats = Partial<Record<EquipmentRarity, Partial<Record<EquimpentSlot, Record<number, EquipmentStatsWithIncrement>>>>>
 
 export interface Equipment {
   id: string

@@ -1,4 +1,11 @@
-const starsStats: StarsStats = {
+// Constants
+export const EQUIPMENT_CONSTANTS = {
+  MAX_STARS: 5,
+  MAX_LEVEL: 40,
+} as const
+
+// Base data
+const baseStats: BaseStats = {
   imperial: {
     boots: {
       0: {
@@ -6,6 +13,10 @@ const starsStats: StarsStats = {
         heroHP: 10500,
         boostHeroHP: 2.50,
         boostHeroDefense: 2.50,
+        heroDefenseIncrement: 5.94,
+        heroHPIncrement: 940.64,
+        boostHeroHPIncrement: 0.1249,
+        boostHeroDefenseIncrement: 0.1249,
       },
       1: {
         heroDefense: 50,
@@ -46,150 +57,217 @@ const levelUpgrade: LevelUpgrade = {
   ],
 }
 
-export default function useEquipment(initialEquipment: Equipment) {
-  const equipment = ref<Equipment>(initialEquipment)
-  const activeStar = ref<number>(0)
-  const isPromoted = ref<boolean>(false)
-  const maxStars = 5
-  const maxLevel = 40
+export type StatValue = number | string
+export type StatCalculator = (baseValue: number, level: number) => StatValue
 
-  // Форматирование имени стата
-  const formatName = (stat: string, reverse: boolean = false): string => {
-    if (reverse) {
-      return stat
-        .split(' ')
-        .map((word, index) =>
-          index === 0 ? word.toLowerCase() : word.charAt(0).toUpperCase() + word.slice(1).toLowerCase(),
-        )
-        .join('')
+/**
+ * Formats stat value based on whether it's a percentage or not
+ */
+function formatStatValue(value: number, isPercentage: boolean): StatValue {
+  return isPercentage ? `+${value.toFixed(2)}%` : Math.round(value)
+}
+
+/**
+ * Creates a calculator function for a specific stat type
+ */
+function createStatCalculator(increment: number, isPercentage: boolean): StatCalculator {
+  return (baseValue: number, level: number): StatValue =>
+    formatStatValue(baseValue + increment * level, isPercentage)
+}
+
+/**
+ * Creates a map of stat calculators for the given equipment
+ */
+function useStatCalculators(equipment: Ref<Equipment>,	activeStar: Ref<number>) {
+  return computed(() => {
+    const calculators = new Map<StatType, StatCalculator>()
+    const starStats = baseStats[equipment.value.rarity]?.[equipment.value.slot]
+    if (!starStats)
+      return calculators
+
+    // Get stat increment for the current star level
+    const getStatIncrement = (statType: StatType): number => {
+      for (let i = activeStar.value; i >= 0; i--) {
+        const increment = starStats[i]?.[`${statType}Increment`]
+        if (increment !== undefined)
+          return increment
+      }
+      return 0
     }
 
-    return stat
-      .replace(/([a-z])([A-Z])/g, '$1 $2')
-      .split(' ')
-      .map(part => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
-      .join(' ')
-  }
+    // Initialize calculators for each stat type
+    for (const statType of Object.keys(starStats[0] || {}) as StatType[]) {
+      if (!statType.includes('Increment')) {
+        const increment = getStatIncrement(statType)
+        const isPercentage = statType.includes('boost')
+        calculators.set(statType, createStatCalculator(increment, isPercentage))
+      }
+    }
 
-  // Получение базовых статов с учётом звёзд
-  const getBaseStats = (): Record<StatType, number> => {
-    const stats: Record<StatType, number> = {} as Record<StatType, number>
+    return calculators
+  })
+}
+
+/**
+ * Gets base stats for the current equipment and star level
+ */
+function useBaseStats(equipment: Ref<Equipment>,	activeStar: Ref<number>) {
+  const stats = computed((): Record<StatType, number> => {
+    const result: Partial<Record<StatType, number>> = {}
+    const starStats = baseStats[equipment.value.rarity]?.[equipment.value.slot]
+
+    if (!starStats)
+      return result as Record<StatType, number>
 
     for (let i = 0; i <= activeStar.value; i++) {
-      const starStats = starsStats[equipment.value.rarity]?.[equipment.value.slot]?.[i] || {}
-      Object.entries(starStats).forEach(([stat, value]) => {
-        const statType = stat as StatType
-        stats[statType] = value
-      })
+      const currentStats = starStats[i] || {}
+      const previousStats = i > 0 ? starStats[i - 1] || {} : {}
+
+      // Add current level stats
+      Object.entries(currentStats)
+        .filter(([key]) => !key.includes('Increment'))
+        .forEach(([key, value]) => {
+          result[key as StatType] = value as number
+        })
+
+      // Fallback to previous level stats if missing
+      Object.entries(previousStats)
+        .filter(([key]) => !key.includes('Increment') && !(key in currentStats))
+        .forEach(([key, value]) => {
+          result[key as StatType] = value as number
+        })
     }
 
-    return stats
+    return result as Record<StatType, number>
+  })
+
+  return {
+    stats,
   }
+}
 
-  // Расчет значения стата на конкретном уровне
-  const calculateStatValue = (
-    baseValue: number,
-    statType: StatType,
-    currentLevel: number,
-  ): number | string => {
-    let increment = 0
-    switch (statType) {
-      case 'heroDefense':
-        increment = 5.94 * currentLevel
-        break
-      case 'heroHP':
-        increment = 940.6 * currentLevel
-        break
-      case 'boostHeroHP':
-      case 'boostHeroDefense':
-        increment = 0.1249 * currentLevel
-        break
-    }
-    if (statType === 'boostHeroHP' || statType === 'boostHeroDefense') {
-      return `+${Number(Math.round((baseValue + increment) * 100) / 100).toFixed(2)}%`
-    }
-    return Math.round(baseValue + increment)
-  }
-
-  // Расчет требований для уровня
-  const calculateLevelRequirements = (level: number): Resource[] => {
+/**
+ * Handles level requirements calculations
+ */
+function useLevelRequirements(equipment: Ref<Equipment>,	isPromoted: Ref<boolean>) {
+  const calculateRequirements = (level: number): Resource[] => {
     if (isPromoted.value)
       return []
 
-    const range = levelUpgrade[equipment.value.rarity]?.find(range =>
+    const rarity = equipment.value.rarity
+    const upgrades = levelUpgrade[rarity]
+    if (!upgrades)
+      return []
+
+    const range = upgrades.find((range: LevelRequirements) =>
       level >= range.min && level <= range.max,
-    ) ?? levelUpgrade[equipment.value.rarity]?.[levelUpgrade[equipment.value.rarity]!.length - 1]
+    ) ?? upgrades[upgrades.length - 1]
 
     if (!range)
       return []
 
     return Object.entries(range)
       .filter(([key]) => key !== 'min' && key !== 'max')
-      .map(([key, value]) => ({
-        material: key as ResourseMaterial,
-        amount: value as number,
+      .map(([material, amount]) => ({
+        material: material as ResourseMaterial,
+        amount: amount as number,
       }))
   }
 
-  // Получение дополнительных атрибутов
-  const getExtraAttributes = (level: number): TableRowExtra[] => {
-    const extra: TableRowExtra[] = []
+  return {
+    calculateRequirements,
+  }
+}
+
+/**
+ * Handles extra attributes calculations
+ */
+function useExtraAttributes(equipment: Ref<Equipment>,	isPromoted: Ref<boolean>) {
+  const getAttributes = (level: number): TableRowExtra[] => {
     const starLevel = isPromoted.value ? (level + 1) * 10 : level
     const extraKey = `lv_${starLevel}`
 
-    Object.entries(equipment.value.statsProgression).forEach(([stat, progression]) => {
-      if (progression?.extra?.[extraKey] !== undefined) {
-        const value = progression.extra[extraKey]
+    return Object.entries(equipment.value.statsProgression)
+      .filter(([, progression]) => progression?.extra?.[extraKey] !== undefined)
+      .map(([stat, progression]) => {
+        const value = progression!.extra![extraKey]
         const formattedValue = typeof value === 'string' && value.includes('.')
           ? value.endsWith('%') ? value : `${value}%`
           : value.toString()
-        extra.push({
-          id: formatName(stat),
-          value: formattedValue,
-        })
-      }
-    })
 
-    return extra
+        return {
+          id: makeCamelCase(stat),
+          value: formattedValue,
+        }
+      })
   }
 
-  // Преобразование в данные таблицы
-  const equipmentToTableData = (eq: Equipment): TableData => {
+  return {
+    getAttributes,
+  }
+}
+
+/**
+ * Main equipment composable
+ */
+export default function useEquipment(initialEquipment: Equipment) {
+  const equipment = ref<Equipment>(initialEquipment)
+  const activeStar = ref<number>(0)
+  const isPromoted = ref<boolean>(false)
+
+  // Initialize sub-composables with reactive refs
+  const { stats } = useBaseStats(equipment, activeStar)
+  const { calculateRequirements } = useLevelRequirements(equipment, isPromoted)
+  const { getAttributes } = useExtraAttributes(equipment, isPromoted)
+  const calculators = useStatCalculators(equipment, activeStar)
+
+  // Create table data
+  const tableData = computed((): TableData => {
+    const iterations = isPromoted.value
+      ? EQUIPMENT_CONSTANTS.MAX_STARS - 1
+      : EQUIPMENT_CONSTANTS.MAX_LEVEL
+
+    const currentStats = stats.value
+    const currentCalculators = calculators.value
     const rows: TableRow[] = []
-    const iterations = isPromoted.value ? maxStars - 1 : maxLevel
-    const baseStats = getBaseStats()
 
     for (let i = 0; i <= iterations; i++) {
       const data: TableRowData[] = []
+      const requirements = calculateRequirements(i)
+      const extra = getAttributes(i)
 
-      Object.entries(baseStats).forEach(([statType, baseValue]) => {
-        const value = calculateStatValue(baseValue, statType as StatType, i)
-        data.push({
-          id: formatName(statType),
-          value,
-        })
-      })
-
-      Object.entries(eq.statsProgression).forEach(([statType, progression]) => {
-        if (progression && !progression.extra) {
-          const baseValue = baseStats[statType as StatType] || 0
-          const value = calculateStatValue(baseValue, statType as StatType, i)
+      // Add base stats
+      Object.entries(currentStats).forEach(([statType, baseValue]) => {
+        const calculator = currentCalculators.get(statType as StatType)
+        if (calculator) {
           data.push({
-            id: formatName(statType),
-            value,
+            id: makeCamelCase(statType),
+            value: calculator(baseValue, i),
           })
         }
       })
 
-      const requirements = calculateLevelRequirements(i)
+      // Add progression stats
+      Object.entries(equipment.value.statsProgression)
+        .filter(([, progression]) => progression && !progression.extra)
+        .forEach(([statType]) => {
+          const baseValue = currentStats[statType as StatType] || 0
+          const calculator = currentCalculators.get(statType as StatType)
+          if (calculator) {
+            data.push({
+              id: makeCamelCase(statType),
+              value: calculator(baseValue, i),
+            })
+          }
+        })
+
+      // Add requirements
       requirements.forEach((resource) => {
         data.push({
-          id: formatName(resource.material),
+          id: makeCamelCase(resource.material),
           value: resource.amount,
         })
       })
-
-      const extra = getExtraAttributes(i)
 
       rows.push({
         name: isPromoted.value ? `${i + 1}` : `Level ${i}`,
@@ -198,34 +276,33 @@ export default function useEquipment(initialEquipment: Equipment) {
       })
     }
 
-    const allColumns = new Set<string>()
-    rows.forEach((row) => {
-      row.data.forEach((item) => {
-        allColumns.add(item.id)
-      })
-    })
+    const columns = new Set<string>(
+      rows.flatMap(row => row.data.map(item => item.id)),
+    )
 
     return {
-      head: [isPromoted.value ? 'Stars' : 'Level', ...Array.from(allColumns)],
+      head: [isPromoted.value ? 'Stars' : 'Level', ...Array.from(columns)],
       rows,
     }
-  }
-
-  const canPromote = computed(() => {
-    return equipment.value.rarity === 'imperial' && activeStar.value === 5 && !isPromoted.value
   })
+
+  // Computed properties
+  const canPromote = computed(() =>
+    equipment.value.rarity === 'imperial'
+    && activeStar.value === EQUIPMENT_CONSTANTS.MAX_STARS
+    && !isPromoted.value,
+  )
+
+  // Methods
+  const updateEquipment = (newEquipment: Equipment) => {
+    equipment.value = newEquipment
+    isPromoted.value = false
+  }
 
   const promote = () => {
     if (canPromote.value) {
       isPromoted.value = true
     }
-  }
-
-  const tableData = computed<TableData>(() => equipmentToTableData(equipment.value))
-
-  const updateEquipment = (newEquipment: Equipment) => {
-    equipment.value = newEquipment
-    isPromoted.value = false
   }
 
   return {

@@ -2,7 +2,7 @@ export const imperialBoots: Equipment = {
   id: 'imperial-boots',
   name: 'Imperial Boots',
   slot: 'boots',
-  rarity: 'epic',
+  rarity: 'imperial',
   statsProgression: {
     heroDefense: {
       values: [40, 50, 60, 80, 100, 120, 140, 160, 179],
@@ -35,20 +35,3 @@ export const imperialBoots: Equipment = {
     },
   },
 }
-
-// export const imperialBoots: Equipment = {
-// 	id: 'imperial-boots',
-// 	name: 'Imperial Boots',
-// 	slot: 'boots',
-// 	rarity: 'epic',
-// 	statsProgression: {
-// 		heroDefense: {
-// 			values: [40, 50, 60, 80, 100, 120, 140, 160, 179],
-// 			extra: {
-// 				10: '100',
-// 				30: '100',
-// 			},
-// 			promote: [150, 190, 200, 300, 400]
-// 		}
-// 	}
-// }

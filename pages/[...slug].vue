@@ -4,11 +4,15 @@ const route = useRoute()
 const { data } = await useAsyncData(`${route.params.slug}`, () => {
   return queryCollection('docs').path(route.path).first()
 })
+
+if (!data.value) {
+  throw createError({
+    statusCode: 404,
+    statusMessage: 'Page Not Found',
+  })
+}
 </script>
 
 <template>
-  <ContentRenderer v-if="data" :value="data" />
-  <div v-else>
-    Page not found
-  </div>
+  <ContentRenderer :value="data!" />
 </template>
