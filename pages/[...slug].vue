@@ -1,6 +1,6 @@
 <script setup lang="ts">
 const route = useRoute()
-// console.log(route)
+
 const { data } = await useAsyncData(`${route.params.slug}`, () => {
   return queryCollection('docs').path(route.path).first()
 })
@@ -14,11 +14,13 @@ if (!data.value) {
 </script>
 
 <template>
-  <Suspense>
-    <ContentRenderer :value="data!" />
+  <ClientOnly>
+    <Suspense>
+      <ContentRenderer :value="data!" />
 
-    <template #fallback>
-      Loading...
-    </template>
-  </Suspense>
+      <template #fallback>
+        Loading...
+      </template>
+    </Suspense>
+  </ClientOnly>
 </template>
