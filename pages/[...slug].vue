@@ -14,5 +14,11 @@ if (!data.value) {
 </script>
 
 <template>
-  <ContentRenderer :value="data!" />
+  <Suspense>
+    <ContentRenderer :value="data!" />
+
+    <template #fallback>
+      Loading...
+    </template>
+  </Suspense>
 </template>
