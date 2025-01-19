@@ -22,5 +22,9 @@ if (!data.value) {
         Loading...
       </template>
     </Suspense>
+
+    <template #fallback>
+      Loading...
+    </template>
   </ClientOnly>
 </template>
