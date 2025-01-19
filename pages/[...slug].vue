@@ -1,11 +1,7 @@
 <script setup lang="ts">
 const route = useRoute()
 
-// const { data } = await useAsyncData(`${route.params.slug}`, () => {
-//   return queryCollection('docs').path(route.path).first()
-// })
-
-const { data } = await useAsyncData(() => queryCollection('docs').path('/').first())
+const { data } = await useAsyncData(`${route.params.slug}`, () => queryCollection('docs').path(route.path).first())
 </script>
 
 <template>
