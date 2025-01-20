@@ -92,7 +92,8 @@ const documentation = {
               Documentation
             </span>
 
-            <span class="text-sm rounded-full border py-0.5 px-2.5 font-semibold text-foreground">v{{ documentation.version }}
+            <span class="text-sm rounded-full border py-0.5 px-2.5 font-semibold text-foreground">v{{
+              documentation.version }}
 
               <span v-if="documentation.tag" class="tracking-wide">{{ documentation.tag }}</span>
             </span>
@@ -113,12 +114,17 @@ const documentation = {
             >
               <UiSidebarMenuItem>
                 <UiCollapsibleTrigger as-child>
-                  <UiSidebarMenuButton :tooltip="item.title">
-                    <Icon class="shrink-0 text-xl" :name="item.icon" />
-                    <span>{{ item.title }}</span>
-                    <ChevronRight
-                      class="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90"
-                    />
+                  <UiSidebarMenuButton :tooltip="item.title" as-child >
+                    <NuxtLink :to="item.url">
+                      <Icon class="shrink-0 text-xl" :name="item.icon" />
+                      <span>{{ item.title }}</span>
+
+                      <div class="p-0.5 hover:bg-sidebar-primary ml-auto rounded-full group/icon" @click.prevent>
+                        <ChevronRight
+                          class="transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90 group-hover/icon:text-sidebar-primary-foreground"
+                        />
+                      </div>
+                    </NuxtLink>
                   </UiSidebarMenuButton>
                 </UiCollapsibleTrigger>
 
