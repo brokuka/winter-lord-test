@@ -6,7 +6,6 @@ export default defineNuxtConfig({
     '@nuxt/eslint',
     '@nuxtjs/tailwindcss',
     'template-copyright',
-    '@nuxt/content',
     '@nuxt/icon',
     '@nuxt/fonts',
   ],
@@ -18,12 +17,6 @@ export default defineNuxtConfig({
   },
 
   css: ['~/assets/styles/tailwind.css'],
-
-  content: {
-    preview: {
-      api: 'https://api.nuxt.studio',
-    },
-  },
 
   compatibilityDate: '2025-01-11',
 })
